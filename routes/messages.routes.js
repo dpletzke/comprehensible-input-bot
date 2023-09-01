@@ -2,8 +2,7 @@
 
 const express = require("express");
 const sendWhatsappMsg = require("../utils/sendWhatsappMsg");
-const { APIcall, singleGPTCall } = require('../utils/getTextFromChatGPT');
-
+const { APIcall, singleGPTCall } = require("../utils/getTextFromChatGPT");
 
 const router = express.Router();
 
@@ -18,34 +17,53 @@ const DONE = "DONE";
 const messagesAndInputsTest = {
   [START]: {
     text: "Welcome to Comprehensible Input Bot! Please enter the language you speak.",
-    pattern: /w+/,
+    pattern: /\w+/,
   },
   [WAITING_USER_LANGUAGE]: {
     text: "Please enter the language you'd like to learn.",
-    pattern: /w+/,
+    pattern: /\w+/,
   },
   [WAITING_PROMPT_LANGUAGE]: {
     text: "Please enter the language you'd like to receive prompts in.",
-    pattern: /w+/,
+    pattern: /\w+/,
   },
   [WAITING_TOPIC]: {
     text: "Please enter a topic you'd like to learn about.",
-    pattern: /w+/,
+    pattern: /\w+/,
   },
   [DONE]: {
     text: "Thank you!",
-    pattern: /w+/,
+    pattern: /\w+/,
   },
 };
 
-const handleCase = ({ currentCase, nextCase, Body, phone, userProperty }) => {
+const handleCase = async ({
+  currentCase,
+  nextCase,
+  Body,
+  phone,
+  userProperty,
+}) => {
   if (!messagesAndInputsTest[currentCase].pattern.test(Body)) {
-    sendWhatsappMsg("Error! Try again.", phone);
+    await sendWhatsappMsg("Error! Try again.", phone);
   } else {
+    await sendWhatsappMsg(messagesAndInputsTest[nextCase].text, phone);
     users[phone][userProperty] = Body;
-    sendWhatsappMsg(messagesAndInputsTest[currentCase].text, phone);
     users[phone].status = nextCase;
   }
+  console.log("user: ", users[phone]);
+};
+
+const sendPromptResponse = async (phone) => {
+  const prompts = {
+    spanish: `Dame una historia en español sobre ChatGPT.\n\n`,
+    english: `Give me a story in English about ChatGPT.\n\n`,
+  };
+  const response = await singleGPTCall(
+    prompts[users[phone].promptLanguage.toLowerCase()]
+  ).catch((err) => console.error(err));
+  console.log("response: ", response);
+  sendWhatsappMsg(response, phone);
 };
 
 router.route("/msg").post(async (req, res) => {
@@ -54,10 +72,12 @@ router.route("/msg").post(async (req, res) => {
   if (!users[phone]) {
     users[phone] = { status: START };
   }
+  console.log({ users });
   switch (users[phone].status) {
     case START:
       sendWhatsappMsg(messagesAndInputsTest[START].text, phone);
       users[phone].status = WAITING_USER_LANGUAGE;
+      console.log("user: ", users[phone]);
       break;
     case WAITING_USER_LANGUAGE:
       handleCase({
@@ -78,20 +98,14 @@ router.route("/msg").post(async (req, res) => {
       });
       break;
     case WAITING_TOPIC:
-      handleCase({
+      await handleCase({
         currentCase: WAITING_TOPIC,
         nextCase: DONE,
         Body,
         phone,
         userProperty: "topic",
       });
-      break;
-    case DONE:
-      sendWhatsappMsg(
-        "Thank you! We will send you a message when we find a match.",
-        phone
-      );
-      users[phone].status = START;
+      sendPromptResponse(phone);
       break;
     default:
       const message = await sendWhatsappMsg("Error! Try again.", phone);
@@ -100,8 +114,8 @@ router.route("/msg").post(async (req, res) => {
   }
 });
 
-router.route("/testgpt").post(async(req, res) => {
+router.route("/testgpt").post(async (req, res) => {
   res.send({ result: await singleGPTCall(req.body.prompt) });
-})
+});
 
 module.exports = router;
