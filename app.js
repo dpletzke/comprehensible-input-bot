@@ -12,7 +12,7 @@ app.listen(process.env.PORT, () => {
 });
 
 app.get("/", async (req, res) => {
-  res.send("Hello World!");
+  res.send("Hello world!");
 });
 
 // parse json request body

@@ -46,9 +46,9 @@ let singleGPTCall = async(user_input) => {
         const GPTOutput = await openai.createCompletion({
             model: "text-davinci-002",
             prompt: user_input,
-            max_tokens: 100
+            max_tokens: 1000
         });
-        console.log(GPTOutput.data.choices[0].text);        // return GPTOutput['choices'][0]['text']
+        // console.log(GPTOutput.data.choices[0].text);        // return GPTOutput['choices'][0]['text']
         return GPTOutput.data.choices[0].text
     } catch (err) {
         if (err.response) {
