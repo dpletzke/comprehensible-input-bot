@@ -77,7 +77,6 @@ const sendPromptResponse = async (user) => {
     english: `Tell me a story in English at level ${user.languageLevel} with 20 sentences.`,
   }[user.outputLanguage];
   const response = await singleGPTCall(prompt);
-  console.log("response: ", response);
   await sendWhatsappMsg(response, user.phone);
   return response;
 };
@@ -92,7 +91,6 @@ const genQuestions = async (user, story) => {
     english: `Answer these three true/false questions and send any message to see the answers.`,
   }[user.outputLanguage];
   const response = await singleGPTCall(prompt);
-  console.log("response: ", response);
   await sendWhatsappMsg(`${questionDescrip} \n ${response}`, user.phone);
   return response;
 };
@@ -103,7 +101,6 @@ const genAnswers = async (user, story, questions) => {
     english: `Given the following story, what are the answers to the yes and no questions? Story: ${story}, Questions: ${questions}`,
   }[user.outputLanguage];
   const response = await singleGPTCall(prompt);
-  console.log("response: ", response);
   await sendWhatsappMsg(response, user.phone);
   return response;
 };
@@ -129,7 +126,7 @@ router.route("/msg").post(async (req, res) => {
       );
       user.status = WAITING_USER_LANGUAGE;
       console.log("user: ", user);
-      break;
+      break;  
     case WAITING_USER_LANGUAGE:
       handleCase({
         currentCase: WAITING_USER_LANGUAGE,
